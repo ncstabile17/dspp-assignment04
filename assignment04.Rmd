@@ -4,9 +4,74 @@ author: "Nick Stabile"
 date: "9/22/2020"
 output: html_document
 ---
+Rmarkdown
+Create and reasonably format an RMarkdown document for this analysis. Specifically:
+• Include a title and your name as the author within the opening YAML;
+• Use a hyperlink to link to the source of your data;
+• Use appropriate headers to signify each visualization;
+• Include code chunks for data manipulation and visualization so we can understand the code and analysis
+you ran to create the graphs;
+• Hide warning messages and unnecessary printing of data;
+
+Four ggplot2 graphs
+Your analysis should have four data visualizations of distinct graph types, made with ggplot2. Across all four graphs, use a total of:
+• Six different aesthetics;
+• Six different non-aesthetic options;
+• Five different geoms;
+• Two different scales (meaning change the default scale used for at least two aesthetics).
+
+Further, each graph must include:
+• Correct usage of all visual encodings;
+• Appropriate data sourcing;
+• Proper labeling of ALL visual encodings;
+• An appropriate title and subtitle;
+• The co
+
+Next steps:
+- Read in file
+- figure out how to sum the projects with the same address to create total project cost variable (like I did in Stata)
+- maybe think about adding in the market rate data from here: https://octo.quickbase.com/db/bit4krbdh?a=q&qid=44
+  - also email DMPED about it
+- Create ratios of incentive amount to affordable housing production
+  - Basically affordable units per dollar spent on the incentive
+  - When I have the total project amounts I can divide the particular incentive amount by the total     project amount (for projects with only 1 funding source this will just be 1) and then divide by     the affordable units 
+- Look at how many projects had multiple funding sources
+- Look at which funding sources are most often used in combination (are there certain ones used more often alone or in combination?)
+- Look at projects that didn't have any affordable housing (maybe manually)
+- Re-read the report to see what other things they did and what I can build on
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(haven)
+```
+
+```{r}
+
+dc_housing_investment <- read_csv("dc-housing-investment.csv") %>% 
+  rename(
+    year = `FY`,
+    incentive_name = `Incentive Name`,
+    recipient_name = `Recipient Name`,
+    incentive_amount = `Incentive Amount`,
+    investment_address = `MAR Address of Investment`,
+    ward = `MAR_Ward`,
+    ami_30 = `30% AMI`,
+    ami_50 = `50% AMI`,
+    ami_60 = `60% AMI`,
+    ami_80 = `80% AMI`,
+    total_affordable = `Total Affordable Units Produced or Preserved`,
+    )
+
+total_proj_data <- dc_housing_investment %>% 
+  group_by(investment_address) %>% 
+  summarize(total_proj_investment = sum(incentive_amount))
+
+dc_housing_investment <- 
+  left_join(dc_housing_investment, total_proj_data, by = "investment_address")
+
 ```
 
 ## R Markdown
