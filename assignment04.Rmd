@@ -40,16 +40,17 @@ Next steps:
 - Look at projects that didn't have any affordable housing (maybe manually)
 - Re-read the report to see what other things they did and what I can build on
 
-Graph 1: investment by year by incentive name
+Graph 1: geom_col, investment by year by incentive name
 Graph 2: investment dollars per affordable units (total) by incentive name
-Graph 3: deeply affordable units produced by incentive name
-Graph 4: affordable units by number of incentives used in combination
+Graph 3: geom_dotplot deeply affordable units produced by incentive name (maybe use facets?)
+Graph 4: geom_hist, number of incentives used for projects
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(haven)
+library(scales)
 ```
 
 ```{r}
@@ -59,7 +60,7 @@ dc_housing_investment <- read_csv("dc-housing-investment.csv") %>%
     year = `FY`,
     incentive_name = `Incentive Name`,
     recipient_name = `Recipient Name`,
-    incentive_amount = `Incentive Amount`,
+    incentive_amount = `Incentive Amount`, 
     investment_address = `MAR Address of Investment`,
     ward = `MAR_Ward`,
     ami_30 = `30% AMI`,
@@ -93,8 +94,40 @@ dc_housing_investment <- dc_housing_investment %>%
     ami_50_ratio = investment_ratio*ami_50,
     ami_60_ratio = investment_ratio*ami_60,
     ami_80_ratio = investment_ratio*ami_80,
+    total_affordable_efficiency = if_else(total_affordable_ratio > 0, incentive_amount/total_affordable_ratio, 0),
+    ami_30_efficiency = if_else(ami_30_ratio > 0, incentive_amount/ami_30_ratio, 0),
+    ami_50_efficiency = if_else(ami_50_ratio > 0, incentive_amount/ami_50_ratio, 0),
+    ami_60_efficiency = if_else(ami_60_ratio > 0, incentive_amount/ami_60_ratio, 0),
+    ami_80_efficiency = if_else(ami_80_ratio > 0, incentive_amount/ami_80_ratio, 0),
     )
 
+dc_housing_investment %>% 
+  group_by(incentive_name) %>% 
+  summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE)) %>%
+  filter(incentive_total_affordable > 100) %>% 
+  ggplot() +
+  geom_col(mapping = aes(
+    x = reorder(str_wrap(incentive_name, 20), -incentive_total_affordable), 
+    y = incentive_total_affordable)) +
+  labs(
+    x = "Investment Program",
+    y = "Affordable Housing Units"
+  ) + 
+  coord_flip()
 
+dc_housing_investment %>% 
+  group_by(incentive_name) %>% 
+  summarize(incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)) %>%
+  filter(incentive_avg_efficiency > 0) %>% 
+  ggplot() +
+  geom_col(mapping = aes(
+    x = reorder(str_wrap(incentive_name, 20), -incentive_avg_efficiency), 
+    y = incentive_avg_efficiency)) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Investment Program",
+    y = "Investment Dollars Per Unit"
+  ) + 
+  coord_flip()
 
 ```
