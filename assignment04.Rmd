@@ -34,12 +34,16 @@ Next steps:
   - also email DMPED about it
 - Create ratios of incentive amount to affordable housing production
   - Basically affordable units per dollar spent on the incentive
-  - When I have the total project amounts I can divide the particular incentive amount by the total     project amount (for projects with only 1 funding source this will just be 1) and then divide by     the affordable units 
+  - When I have the total project amounts I can divide the particular incentive amount by the total     project amount (for projects with only 1 funding source this will just be 1) and then divide by the affordable units 
 - Look at how many projects had multiple funding sources
 - Look at which funding sources are most often used in combination (are there certain ones used more often alone or in combination?)
 - Look at projects that didn't have any affordable housing (maybe manually)
 - Re-read the report to see what other things they did and what I can build on
 
+Graph 1: investment by year by incentive name
+Graph 2: investment dollars per affordable units (total) by incentive name
+Graph 3: deeply affordable units produced by incentive name
+Graph 4: affordable units by number of incentives used in combination
 
 
 ```{r setup, include=FALSE}
@@ -63,7 +67,16 @@ dc_housing_investment <- read_csv("dc-housing-investment.csv") %>%
     ami_60 = `60% AMI`,
     ami_80 = `80% AMI`,
     total_affordable = `Total Affordable Units Produced or Preserved`,
-    )
+    ) %>% 
+  mutate(
+    investment_address = str_to_upper(investment_address),
+    ami_30 = as.numeric(ami_30),
+    ami_50 = as.numeric(ami_50),
+    ami_60 = as.numeric(ami_60),
+    ami_80 = as.numeric(ami_80),
+    total_affordable = as.numeric(total_affordable),
+    incentive_name=replace(incentive_name, incentive_name=="HFA Revenue Bond Issuance", "HFA Revenue Bond")
+  )
 
 total_proj_data <- dc_housing_investment %>% 
   group_by(investment_address) %>% 
@@ -72,24 +85,16 @@ total_proj_data <- dc_housing_investment %>%
 dc_housing_investment <- 
   left_join(dc_housing_investment, total_proj_data, by = "investment_address")
 
+dc_housing_investment <- dc_housing_investment %>% 
+  mutate(
+    investment_ratio = incentive_amount/total_proj_investment,
+    total_affordable_ratio = investment_ratio*total_affordable,
+    ami_30_ratio = investment_ratio*ami_30,
+    ami_50_ratio = investment_ratio*ami_50,
+    ami_60_ratio = investment_ratio*ami_60,
+    ami_80_ratio = investment_ratio*ami_80,
+    )
+
+
+
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
