@@ -168,13 +168,23 @@ dc_housing_investment %>%
   facet_wrap(~ incentive_name)
 
 dc_housing_investment %>% 
-  group_by(incentive_name) %>% 
+  distinct(investment_address, .keep_all = TRUE) %>% 
+  filter(!is.na(ward)) %>% 
   ggplot() + 
+  geom_boxplot(mapping = aes(
+    x = ward, 
+    y = total_affordable)) +
   geom_dotplot(mapping = aes(
     x = ward, 
-    y = total_affordable), 
+    y = total_affordable,
+    fill = as.factor(year)), 
     binaxis='y', 
     stackdir='center', 
-    binwidth = 5)
+    binwidth = 12)
+
+dc_housing_investment %>% 
+  count(investment_address) %>% 
+  ggplot() + 
+  geom_bar(aes(x = n))
 
 ```
