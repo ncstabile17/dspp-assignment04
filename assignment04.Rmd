@@ -40,6 +40,10 @@ Next steps:
 - Look at projects that didn't have any affordable housing (maybe manually)
 - Re-read the report to see what other things they did and what I can build on
 
+efficiency of particular programs
+how investment has changed over time (facet for investment )
+
+
 Graph 1: geom_col, investment by year by incentive name
 Graph 2: investment dollars per affordable units (total) by incentive name
 Graph 3: geom_dotplot deeply affordable units produced by incentive name (maybe use facets?)
@@ -55,6 +59,8 @@ library(scales)
 
 ```{r}
 
+# Todo: Add more detailed comments
+# Cleaning and adding variables 
 dc_housing_investment <- read_csv("dc-housing-investment.csv") %>% 
   rename(
     year = `FY`,
@@ -101,33 +107,64 @@ dc_housing_investment <- dc_housing_investment %>%
     ami_80_efficiency = if_else(ami_80_ratio > 0, incentive_amount/ami_80_ratio, 0),
     )
 
+min_affordable_units <- dc_housing_investment %>% 
+  group_by(incentive_name) %>% 
+  summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE)) %>% 
+  filter(incentive_total_affordable > 0) %>% 
+  pull(incentive_name)
+
+dc_housing_investment <- dc_housing_investment %>% 
+  filter(incentive_name %in% min_affordable_units)
+
+```
+
+Todo: Add commentary
+And now the graphs!
+
+```{r}
+
 dc_housing_investment %>% 
   group_by(incentive_name) %>% 
   summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE)) %>%
-  filter(incentive_total_affordable > 100) %>% 
   ggplot() +
   geom_col(mapping = aes(
-    x = reorder(str_wrap(incentive_name, 20), -incentive_total_affordable), 
+    x = reorder(str_wrap(incentive_name, 10), -incentive_total_affordable), 
     y = incentive_total_affordable)) +
   labs(
     x = "Investment Program",
-    y = "Affordable Housing Units"
-  ) + 
+    y = "Affordable Housing Units") + 
   coord_flip()
 
 dc_housing_investment %>% 
   group_by(incentive_name) %>% 
-  summarize(incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)) %>%
-  filter(incentive_avg_efficiency > 0) %>% 
+  summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE),
+            incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)) %>%
   ggplot() +
-  geom_col(mapping = aes(
+  geom_col(
+    mapping = aes(
     x = reorder(str_wrap(incentive_name, 20), -incentive_avg_efficiency), 
     y = incentive_avg_efficiency)) +
   scale_y_continuous(labels = comma) +
   labs(
     x = "Investment Program",
-    y = "Investment Dollars Per Unit"
+    y = "Investment Dollars Per Unit Produced or Preserved"
   ) + 
   coord_flip()
+
+# Todo: make this into a line graph showing investment over time with facets for each program
+dc_housing_investment %>% 
+  group_by(year, incentive_name) %>% 
+  summarize(incentive_total_year = sum(incentive_amount)) %>% 
+  ggplot() +
+  geom_line(mapping = aes(
+    x = year, 
+    y = incentive_total_year,
+  ), linetype = "dashed") +
+  geom_point(mapping = aes(
+    x = year, 
+    y = incentive_total_year,
+  )) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(~ incentive_name)
 
 ```
