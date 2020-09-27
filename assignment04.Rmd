@@ -158,13 +158,23 @@ dc_housing_investment %>%
   ggplot() +
   geom_line(mapping = aes(
     x = year, 
-    y = incentive_total_year,
-  ), linetype = "dashed") +
+    y = incentive_total_year),
+    linetype = "dashed") +
   geom_point(mapping = aes(
     x = year, 
     y = incentive_total_year,
   )) +
   scale_y_continuous(labels = comma) +
   facet_wrap(~ incentive_name)
+
+dc_housing_investment %>% 
+  group_by(incentive_name) %>% 
+  ggplot() + 
+  geom_dotplot(mapping = aes(
+    x = ward, 
+    y = total_affordable), 
+    binaxis='y', 
+    stackdir='center', 
+    binwidth = 5)
 
 ```
