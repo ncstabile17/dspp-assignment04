@@ -16,6 +16,7 @@ This data set pulls together economic development investments from across a vari
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(haven)
+library(readxl)
 library(scales)
 ```
 
@@ -23,7 +24,7 @@ library(scales)
 ```{r warning = FALSE, message = FALSE, results = FALSE}
 
 # Making the variable names easier to work with 
-dc_housing_investment <- read_csv("dc-housing-investment.csv") %>% 
+dc_housing_investment <- read_csv("data/dc-housing-investment.csv") %>% 
   rename(
     year = `FY`,
     incentive_name = `Incentive Name`,

@@ -377,7 +377,7 @@ summary {
 <div id="data-import-and-cleaning" class="section level3">
 <h3>Data Import and Cleaning</h3>
 <pre class="r"><code># Making the variable names easier to work with 
-dc_housing_investment &lt;- read_csv(&quot;dc-housing-investment.csv&quot;) %&gt;% 
+dc_housing_investment &lt;- read_csv(&quot;data/dc-housing-investment.csv&quot;) %&gt;% 
   rename(
     year = `FY`,
     incentive_name = `Incentive Name`,
@@ -412,7 +412,7 @@ total_proj_data &lt;- dc_housing_investment %&gt;%
 dc_housing_investment &lt;- 
   left_join(dc_housing_investment, total_proj_data, by = &quot;investment_address&quot;)
 
-# The set of ratio variables show how much a particular investment (osbservation) contributed to the overall project to account for projects with multiple investments
+# The set of ratio variables show how much a particular investment (observation) contributed to the overall project to account for projects with multiple investments
 # The second set of variables was created to analyze the return on investment in terms of number of dollars invested for each unit
 dc_housing_investment &lt;- dc_housing_investment %&gt;% 
   mutate(
@@ -438,7 +438,6 @@ min_affordable_units &lt;- dc_housing_investment %&gt;%
 
 dc_housing_investment &lt;- dc_housing_investment %&gt;% 
   filter(incentive_name %in% min_affordable_units)</code></pre>
-<p>Todo: Add commentary</p>
 </div>
 <div id="figure-1.-production-and-preservation-of-affordable-units" class="section level3">
 <h3>Figure 1. Production and Preservation of Affordable Units</h3>
@@ -464,7 +463,7 @@ dc_housing_investment &lt;- dc_housing_investment %&gt;%
 </div>
 <div id="figure-2." class="section level3">
 <h3>Figure 2.</h3>
-<p>Figure 2 shows the “efficiency” of investments in affordable housing by each program. The efficiency is denoted as the average number of dollars spent per unit produced or preserved for each program. There is a visible difference between the efficiency of different programs, though no statistical tests were run to confirm the significance of these differences. The fill color shows the number of units produced or preserved that was discussed in Figure 1 and we can see that there is no discernible relationship between the efficiency of the program and the number of units produced. Perhaps unsurprisingly, the Housing Preservation Fund is by far the most efficient program, though as its name implies it is focused on preserving already existing affordable units rather than producing new ones.</p>
+<p>Figure 2 shows the “efficiency” of investments in affordable housing by each program. The efficiency is shown as the average number of dollars spent per unit produced or preserved for each program. There is a visible difference between the efficiency of different programs, though no statistical tests were run to confirm the significance of these differences. The fill color shows the number of units produced or preserved as discussed in Figure 1, and we can see that there is no discernible relationship between the efficiency of the program and the number of units produced. Perhaps unsurprisingly, the Housing Preservation Fund is by far the most efficient program, though as its name implies it is focused on preserving already existing affordable units rather than producing new ones.</p>
 <pre class="r"><code>dc_housing_investment %&gt;% 
   group_by(incentive_name) %&gt;% 
   summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE),
@@ -491,7 +490,7 @@ dc_housing_investment &lt;- dc_housing_investment %&gt;%
 </div>
 <div id="figure-3.-investment-in-affordable-housing-programs" class="section level3">
 <h3>Figure 3. Investment in Affordable Housing Programs</h3>
-<p>As was to be expected based on the data presented in Figure 1, the total investments in affordable housing have been dominated by HFA bond issuance and Housing Production Trust Fund dollars from FY15-19. Taken together, we can see that the relatively new Housing Preservation Fund has preserved a large amount of units per dollar invested, demonstrating the strength of the program and providing support for its continued use and expansion in the coming years. We can also see the fairly large changes in HFA bond investment from year to year. While the efficiency of this program was found to be comparatively low, further research would be needed to determine if other factors like type of unit and affordability level are playing a role in the differences in program efficiency.</p>
+<p>As was to be expected based on the data presented in Figure 1, the total investments in affordable housing have been dominated by HFA bond issuance and Housing Production Trust Fund dollars from FY15-19. The investment over time is highly variable for most programs, with all but four having at least one year without any investment. On a positive note, the relatively new Housing Preservation Fund has preserved a large amount of units per dollar invested, demonstrating the strength of the program and providing support for its continued use and expansion in the coming years. We can also see the fairly large fluctuations in HFA bond investment from year to year. While the efficiency of this program was found to be comparatively low, further research would be needed to determine if other factors like type of unit and affordability level are playing a role in the differences in program efficiency.</p>
 <pre class="r"><code>dc_housing_investment %&gt;% 
   group_by(year, incentive_name) %&gt;% 
   summarize(incentive_total_year = sum(incentive_amount)) %&gt;% 
