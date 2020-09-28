@@ -1,17 +1,19 @@
 ---
-title: "Assignment 04"
+title: "PPOL 670 | Assignment 04"
 author: "Nick Stabile"
 date: "9/22/2020"
 output: html_document
 ---
+## DC Affordable Housing Investment Analysis FY15-19
+**Data Source:** [DC FY19 Economic Development Return on Investment Data spreadsheet](https://dmped.dc.gov/sites/default/files/dc/sites/dmped/publication/attachments/Return%20on%20Investment%20Data_FY15-19_v3.xlsx)
+
+**Data Author:** Office of the Deputy Mayor for Planning and Economic Development (DMPED)
+
+This data set pulls together economic development investments from across a variety of agencies and programs in the DC government for FY15-19. The data set was created by DMPED as required by the Economic Development Return on Investment Accountability Amendment Act of 2018. Fore more information see DMPED's [FY19 Economic Development Return on Investment Accountability Report] (https://dmped.dc.gov/sites/default/files/dc/sites/dmped/publication/attachments/FY19%20ED%20Return%20on%20Investment%20Accountability%20Report.pdf).
+
 Rmarkdown
 Create and reasonably format an RMarkdown document for this analysis. Specifically:
-• Include a title and your name as the author within the opening YAML;
-• Use a hyperlink to link to the source of your data;
 • Use appropriate headers to signify each visualization;
-• Include code chunks for data manipulation and visualization so we can understand the code and analysis
-you ran to create the graphs;
-• Hide warning messages and unnecessary printing of data;
 
 Four ggplot2 graphs
 Your analysis should have four data visualizations of distinct graph types, made with ggplot2. Across all four graphs, use a total of:
@@ -57,10 +59,10 @@ library(haven)
 library(scales)
 ```
 
-```{r}
+```{r warning = FALSE, message = FALSE, results = FALSE}
 
 # Todo: Add more detailed comments
-# Cleaning and adding variables 
+# Make the variable names easier to work with 
 dc_housing_investment <- read_csv("dc-housing-investment.csv") %>% 
   rename(
     year = `FY`,
@@ -75,6 +77,8 @@ dc_housing_investment <- read_csv("dc-housing-investment.csv") %>%
     ami_80 = `80% AMI`,
     total_affordable = `Total Affordable Units Produced or Preserved`,
     ) %>% 
+  # Ensuring variables are consistent and converting to numeric
+  # Note that the "HFA Revenue Bond Issuance" was renamed to "HFA Revenue Bond" in 2019 so this makes all years consistent
   mutate(
     investment_address = str_to_upper(investment_address),
     ami_30 = as.numeric(ami_30),
@@ -85,6 +89,8 @@ dc_housing_investment <- read_csv("dc-housing-investment.csv") %>%
     incentive_name=replace(incentive_name, incentive_name=="HFA Revenue Bond Issuance", "HFA Revenue Bond")
   )
 
+# Some projects (denoted by address) had multiple investments from different programs so it's useful to know the total investment for each observation
+# There is probably a more efficient way to add this variable 
 total_proj_data <- dc_housing_investment %>% 
   group_by(investment_address) %>% 
   summarize(total_proj_investment = sum(incentive_amount))
@@ -92,6 +98,8 @@ total_proj_data <- dc_housing_investment %>%
 dc_housing_investment <- 
   left_join(dc_housing_investment, total_proj_data, by = "investment_address")
 
+# The set of ratio variables show how much a particular investment (osbservation) contributed to the overall project to account for projects with multiple investments
+# The second set of variables was created to analyze the return on investment in terms of number of dollars invested for each unit
 dc_housing_investment <- dc_housing_investment %>% 
   mutate(
     investment_ratio = incentive_amount/total_proj_investment,
@@ -107,6 +115,7 @@ dc_housing_investment <- dc_housing_investment %>%
     ami_80_efficiency = if_else(ami_80_ratio > 0, incentive_amount/ami_80_ratio, 0),
     )
 
+# Also probably a more efficient way to do this, but this removes any economic development incentives that did not produce any affordable housing units across the data set
 min_affordable_units <- dc_housing_investment %>% 
   group_by(incentive_name) %>% 
   summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE)) %>% 
@@ -119,39 +128,61 @@ dc_housing_investment <- dc_housing_investment %>%
 ```
 
 Todo: Add commentary
-And now the graphs!
 
-```{r}
+### Figure 1.
+```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
   group_by(incentive_name) %>% 
   summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE)) %>%
   ggplot() +
   geom_col(mapping = aes(
-    x = reorder(str_wrap(incentive_name, 10), -incentive_total_affordable), 
-    y = incentive_total_affordable)) +
+    x = reorder(str_wrap(incentive_name, 20), -incentive_total_affordable), 
+    y = incentive_total_affordable),
+    fill = "blue",
+    color = "black") +
   labs(
     x = "Investment Program",
-    y = "Affordable Housing Units") + 
+    y = "Affordable Housing Units",
+    title = "Total Affordable Units by Program",
+    subtitle = "Number of units produced or preserved for each program FY15-19",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+    ) + 
   coord_flip()
+
+```
+
+### Figure 2.
+```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
   group_by(incentive_name) %>% 
   summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE),
-            incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)) %>%
+            incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)
+            ) %>%
   ggplot() +
   geom_col(
     mapping = aes(
-    x = reorder(str_wrap(incentive_name, 20), -incentive_avg_efficiency), 
-    y = incentive_avg_efficiency)) +
+    x = reorder(str_wrap(incentive_name, 25), -incentive_avg_efficiency), 
+    y = incentive_avg_efficiency,
+    fill = incentive_total_affordable),
+    color = "white") +
   scale_y_continuous(labels = comma) +
   labs(
     x = "Investment Program",
-    y = "Investment Dollars Per Unit Produced or Preserved"
-  ) + 
+    y = "Investment Dollars Spent Per Unit Produced or Preserved",
+    fill = "Total Affordable Units",
+    title = "Investment Dollars Per Unit by Program",
+    subtitle = "Efficiency of affordable housing program for FY15-19",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  ) +
   coord_flip()
 
-# Todo: make this into a line graph showing investment over time with facets for each program
+```
+
+### Figure 3.
+```{r message = FALSE, warning = FALSE}
+
 dc_housing_investment %>% 
   group_by(year, incentive_name) %>% 
   summarize(incentive_total_year = sum(incentive_amount)) %>% 
@@ -161,11 +192,27 @@ dc_housing_investment %>%
     y = incentive_total_year),
     linetype = "dashed") +
   geom_point(mapping = aes(
-    x = year, 
-    y = incentive_total_year,
-  )) +
+      x = year, 
+      y = incentive_total_year
+    ), 
+    shape = 0, color = "blue") +
   scale_y_continuous(labels = comma) +
-  facet_wrap(~ incentive_name)
+  facet_wrap(~ incentive_name) + 
+  theme(
+    strip.text.x = element_text(size = 5.5),
+    axis.text=element_text(size = 6)) +
+  labs(
+    x = "Year",
+    y = "Total Investment",
+    fill = "Year",
+    title = "Investment by Program by Year",
+    subtitle = "Investment in each affordable housing program from FY15-19",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+```
+
+### Figure 4.
+```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
   distinct(investment_address, .keep_all = TRUE) %>% 
@@ -177,14 +224,52 @@ dc_housing_investment %>%
   geom_dotplot(mapping = aes(
     x = ward, 
     y = total_affordable,
-    fill = as.factor(year)), 
+    fill = as.factor(year),
+    ), 
     binaxis='y', 
     stackdir='center', 
-    binwidth = 12)
+    binwidth = 12) +
+  scale_x_discrete(
+    labels = c("Ward 1" = "1",
+               "Ward 2" = "2",
+               "Ward 3" = "3",
+               "Ward 4" = "4",
+               "Ward 5" = "5",
+               "Ward 6" = "6",
+               "Ward 7" = "7",
+               "Ward 8" = "8")
+  ) +
+  labs(
+    x = "Ward",
+    y = "Number of Affordable Units",
+    fill = "Year",
+    title = "Distribution of Affordable Housing Projects by Ward",
+    subtitle = "Number of projects and affordable units by ward",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+```
+
+### Figure 5.
+```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
   count(investment_address) %>% 
   ggplot() + 
-  geom_bar(aes(x = n))
+  geom_bar(aes(x = n)) +
+  scale_x_discrete(
+    limit = c("1" = "1",
+               "2" = "2",
+               "3" = "3",
+               "4" = "4",
+               "5" = "5",
+               "6" = "6")
+  ) +
+  labs(
+    x = "Number of Investments in Project",
+    y = "Count of Projects",
+    title = "Distribution of Projects by Number of Investments",
+    subtitle = "Frequency at which multiple investments are made in particular projects",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
 
 ```
