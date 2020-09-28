@@ -9,47 +9,7 @@ output: html_document
 
 **Data Author:** Office of the Deputy Mayor for Planning and Economic Development (DMPED)
 
-This data set pulls together economic development investments from across a variety of agencies and programs in the DC government for FY15-19. The data set was created by DMPED as required by the Economic Development Return on Investment Accountability Amendment Act of 2018. Fore more information see DMPED's [FY19 Economic Development Return on Investment Accountability Report] (https://dmped.dc.gov/sites/default/files/dc/sites/dmped/publication/attachments/FY19%20ED%20Return%20on%20Investment%20Accountability%20Report.pdf).
-
-Rmarkdown
-Create and reasonably format an RMarkdown document for this analysis. Specifically:
-• Use appropriate headers to signify each visualization;
-
-Four ggplot2 graphs
-Your analysis should have four data visualizations of distinct graph types, made with ggplot2. Across all four graphs, use a total of:
-• Six different aesthetics;
-• Six different non-aesthetic options;
-• Five different geoms;
-• Two different scales (meaning change the default scale used for at least two aesthetics).
-
-Further, each graph must include:
-• Correct usage of all visual encodings;
-• Appropriate data sourcing;
-• Proper labeling of ALL visual encodings;
-• An appropriate title and subtitle;
-• The co
-
-Next steps:
-- Read in file
-- figure out how to sum the projects with the same address to create total project cost variable (like I did in Stata)
-- maybe think about adding in the market rate data from here: https://octo.quickbase.com/db/bit4krbdh?a=q&qid=44
-  - also email DMPED about it
-- Create ratios of incentive amount to affordable housing production
-  - Basically affordable units per dollar spent on the incentive
-  - When I have the total project amounts I can divide the particular incentive amount by the total     project amount (for projects with only 1 funding source this will just be 1) and then divide by the affordable units 
-- Look at how many projects had multiple funding sources
-- Look at which funding sources are most often used in combination (are there certain ones used more often alone or in combination?)
-- Look at projects that didn't have any affordable housing (maybe manually)
-- Re-read the report to see what other things they did and what I can build on
-
-efficiency of particular programs
-how investment has changed over time (facet for investment )
-
-
-Graph 1: geom_col, investment by year by incentive name
-Graph 2: investment dollars per affordable units (total) by incentive name
-Graph 3: geom_dotplot deeply affordable units produced by incentive name (maybe use facets?)
-Graph 4: geom_hist, number of incentives used for projects
+This data set pulls together economic development investments from across a variety of agencies and programs in the DC government for FY15-19. The data set was created by DMPED as required by the Economic Development Return on Investment Accountability Amendment Act of 2018. Fore more information see DMPED's [FY19 Economic Development Return on Investment Accountability Report](https://dmped.dc.gov/sites/default/files/dc/sites/dmped/publication/attachments/FY19%20ED%20Return%20on%20Investment%20Accountability%20Report.pdf).
 
 
 ```{r setup, include=FALSE}
@@ -59,10 +19,10 @@ library(haven)
 library(scales)
 ```
 
+### Data Import and Cleaning
 ```{r warning = FALSE, message = FALSE, results = FALSE}
 
-# Todo: Add more detailed comments
-# Make the variable names easier to work with 
+# Making the variable names easier to work with 
 dc_housing_investment <- read_csv("dc-housing-investment.csv") %>% 
   rename(
     year = `FY`,
@@ -78,7 +38,7 @@ dc_housing_investment <- read_csv("dc-housing-investment.csv") %>%
     total_affordable = `Total Affordable Units Produced or Preserved`,
     ) %>% 
   # Ensuring variables are consistent and converting to numeric
-  # Note that the "HFA Revenue Bond Issuance" was renamed to "HFA Revenue Bond" in 2019 so this makes all years consistent
+  # Note that the "HFA Revenue Bond Issuance" was renamed to "HFA Revenue Bond" in 2019 so this code makes all years consistent
   mutate(
     investment_address = str_to_upper(investment_address),
     ami_30 = as.numeric(ami_30),
@@ -98,7 +58,7 @@ total_proj_data <- dc_housing_investment %>%
 dc_housing_investment <- 
   left_join(dc_housing_investment, total_proj_data, by = "investment_address")
 
-# The set of ratio variables show how much a particular investment (osbservation) contributed to the overall project to account for projects with multiple investments
+# The set of ratio variables show how much a particular investment (observation) contributed to the overall project to account for projects with multiple investments
 # The second set of variables was created to analyze the return on investment in terms of number of dollars invested for each unit
 dc_housing_investment <- dc_housing_investment %>% 
   mutate(
@@ -127,9 +87,9 @@ dc_housing_investment <- dc_housing_investment %>%
 
 ```
 
-Todo: Add commentary
+### Figure 1. Production and Preservation of Affordable  Units
 
-### Figure 1.
+Figure 1 shows the total number of affordable units produced or preserved for each program between FY15 and FY19. Combined, the issuance of bonds by the DC Housing Finance Agency and investments from the Housing Production Trust Fund make up the vast majority of affordable units produced or preserved during this time period. The Housing Preservation Fund is the only other program to top 1,000 units produced or preserved. 
 ```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
@@ -147,12 +107,15 @@ dc_housing_investment %>%
     title = "Total Affordable Units by Program",
     subtitle = "Number of units produced or preserved for each program FY15-19",
     caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
-    ) + 
+    ) +
   coord_flip()
 
 ```
 
 ### Figure 2.
+
+Figure 2 shows the "efficiency" of investments in affordable housing by each program. The efficiency is shown as the average number of dollars spent per unit produced or preserved for each program. There is a visible difference between the efficiency of different programs, though no statistical tests were run to confirm the significance of these differences. The fill color shows the number of units produced or preserved as discussed in Figure 1, and we can see that there is no discernible relationship between the efficiency of the program and the number of units produced. Perhaps unsurprisingly, the Housing Preservation Fund is by far the most efficient program, though as its name implies it is focused on preserving already existing affordable units rather than producing new ones.
+
 ```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
@@ -180,7 +143,10 @@ dc_housing_investment %>%
 
 ```
 
-### Figure 3.
+### Figure 3. Investment in Affordable Housing Programs
+
+As was to be expected based on the data presented in Figure 1, the total investments in affordable housing have been dominated by HFA bond issuance and Housing Production Trust Fund dollars from FY15-19. The investment over time is highly variable for most programs, with all but four having at least one year without any investment. On a positive note, the relatively new Housing Preservation Fund has preserved a large amount of units per dollar invested, demonstrating the strength of the program and providing support for its continued use and expansion in the coming years. We can also see the fairly large fluctuations in HFA bond investment from year to year. While the efficiency of this program was found to be comparatively low, further research would be needed to determine if other factors like type of unit and affordability level are playing a role in the differences in program efficiency. 
+
 ```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
@@ -211,7 +177,10 @@ dc_housing_investment %>%
   )
 ```
 
-### Figure 4.
+### Figure 4. Affordable Housing Investment Across Wards
+
+In Figure 4, we see the vastly uneven distribution of affordable housing investment by Ward. Wards 4, 7, and 8 have the largest concentration of developments with larger developments being particularly skewed towards Wards 7 and 8. While the strong investment in Wards 7 and 8 is crucial for providing adequate affordability for lower income populations that are concentrated in these Wards, the lack of affordable housing development in Wards 2 and 3 further concentrates poverty and makes it difficult for lower income people to live in these more prosperous Wards. Making adequate investments in affordable housing in all Wards will be crucial for meeting the affordable housing distribution goals set out in the [Mayor's Housing Equity Report](https://housing.dc.gov/sites/default/files/dc/sites/housingdc/page_content/attachments/Housing%20Equity%20Report%2010-15-19.pdf). Affordable housing investment by Ward seems to be fairly consistent across years in this data set.
+
 ```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
@@ -249,7 +218,10 @@ dc_housing_investment %>%
   )
 ```
 
-### Figure 5.
+### Figure 5. Using Programs in Combination
+
+While the majority of affordable housing developments received money from only one program in this data set, many received funding from 2 or 3 sources. This is an area that could be explored in future analyses to determine if there is any meaningful difference between developments that receive funding from a different number of sources. There could also be additional research into whether particular programs work well paired together or if the efficiency of the return on investment changes depending on the particular combination of funding sources. It may also be useful to explore the outlier projects that received funding from 4 or more sources. 
+
 ```{r message = FALSE, warning = FALSE}
 
 dc_housing_investment %>% 
