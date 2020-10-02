@@ -147,6 +147,34 @@ dc_housing_investment %>%
 
 ```
 
+```{r}
+
+# Trying this out as scatter plot
+dc_housing_investment %>% 
+  group_by(incentive_name, year) %>% 
+  summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE),
+            incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)
+            ) %>%
+  ggplot() +
+  geom_point(
+    mapping = aes(
+    x = incentive_avg_efficiency, 
+    y = incentive_total_affordable,
+    color = incentive_name)) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Investment Dollars Spent Per Unit Produced or Preserved",
+    y = "Total Affordable Units",
+    color = "Incentive Program",
+    title = "Investment Dollars Per Unit by Program",
+    subtitle = "Efficiency of affordable housing program for FY15-19",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+
+
+```
+
 ### Figure 3. Investment in Affordable Housing Programs
 
 As was to be expected based on the data presented in Figure 1, the total investments in affordable housing have been dominated by HFA bond issuance and Housing Production Trust Fund dollars from FY15-19. The investment over time is highly variable for most programs, with all but four having at least one year without any investment. On a positive note, the relatively new Housing Preservation Fund has preserved a large amount of units per dollar invested, demonstrating the strength of the program and providing support for its continued use and expansion in the coming years. We can also see the fairly large fluctuations in HFA bond investment from year to year. While the efficiency of this program was found to be comparatively low, further research would be needed to determine if other factors like type of unit and affordability level are playing a role in the differences in program efficiency. 
