@@ -2,6 +2,7 @@
 
 This analysis uses `ggplot2` and other `tidyverse` packages to visualize affordable housing investment in DC from FY15-19 and build on work from the DC Office of the Deputy Mayor for Planning and Economic Development (DMPED). For example, the below figure shows the affordable units produced by particular investment programs. 
 
+![Figure showing affordable housing production by investment program](https://github.com/ncstabile17/dspp-assignment04/blob/master/images/total-affordable-by-program.png)
 
 ## Data Source
 [DC FY19 Economic Development Return on Investment Data spreadsheet](https://dmped.dc.gov/sites/default/files/dc/sites/dmped/publication/attachments/Return%20on%20Investment%20Data_FY15-19_v3.xlsx)
