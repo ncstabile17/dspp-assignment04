@@ -51,7 +51,103 @@ dc_housing_investment <- read_csv("data/dc-housing-investment.csv") %>%
     ami_80 = as.numeric(ami_80),
     total_affordable = as.numeric(total_affordable),
     incentive_name=replace(incentive_name, incentive_name=="HFA Revenue Bond Issuance", "HFA Revenue Bond")
-  )
+  ) %>% 
+  # Standardizing quadrant parts of address 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "NORTHEAST", 
+    replacement = "NE"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "SOUTHEAST", 
+    replacement = "SE"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "NORTHWEST", 
+    replacement = "NW"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "SOUTHWEST", 
+    replacement = "SW"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "STREET", 
+    replacement = "ST"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "ROAD", 
+    replacement = "RD"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "PLACE", 
+    replacement = "PL"
+    )
+
+dc_housing_investment$investment_address <- str_remove_all(dc_housing_investment$investment_address, "[,.]") 
+
+affordable_proj_market_rate <- read_csv("data/affordable-projects-market-rate.csv") %>% 
+  rename(
+    investment_address = `Address`
+  ) %>%
+  mutate(
+    investment_address = str_to_upper(investment_address)
+  ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "NORTHEAST", 
+    replacement = "NE"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "SOUTHEAST", 
+    replacement = "SE"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "NORTHWEST", 
+    replacement = "NW"
+    ) %>% 
+  mutate_if(
+    is.character, 
+    str_replace_all, 
+    pattern = "SOUTHWEST", 
+    replacement = "SW"
+    )
+
+affordable_proj_market_rate$investment_address <- str_remove_all(affordable_proj_market_rate$investment_address, "[,.]")
+
+
+# I don't think this is actually doing to work because it looks like there are multiple 
+# entrees for some addresses in the second data set
+# Or it might work but might need additional maneuvering, might be easier to use MAR
+# Also, it looks like there are some entries with affordable housing listed in the second
+# data set, but not the first (particularly tax exemptions)
+# Also, the second data set has investments prior to 2015, which makes things confusing
+# if(nrow(anti_join(dc_housing_investment, affordable_proj_market_rate, by = "investment_address")) == 0){
+#  print("Success - no data lost in join")
+# } else {
+#   print(paste0(
+#    "Warning - ", nrow(anti_join(dc_housing_investment, affordable_proj_market_rate, by = "investment_address")),
+#    " rows of data were not joined."))
+# }
+
+# dc_housing_investment <- left_join(dc_housing_investment, affordable_proj_market_rate, by = "investment_address")
 
 # Some projects (denoted by address) had multiple investments from different programs so it's useful to know the total investment for each observation
 # There is probably a more efficient way to add this variable 
@@ -88,6 +184,9 @@ min_affordable_units <- dc_housing_investment %>%
 
 dc_housing_investment <- dc_housing_investment %>% 
   filter(incentive_name %in% min_affordable_units)
+
+# Looking to pull in data on market rate housing units
+
 
 ```
 
@@ -149,6 +248,108 @@ dc_housing_investment %>%
 
 ```{r}
 
+# Looking at 30% AMI production and efficiency
+dc_housing_investment %>% 
+  group_by(investment_address) %>% 
+  ggplot() +
+  geom_point(
+    mapping = aes(
+    x = ami_30, 
+    y = total_affordable_efficiency,
+    color = incentive_name)) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "30% AMI units in project",
+    y = "Investment Dollars Per Unit",
+    color = "Incentive Program",
+    title = "Production of 30% AMI Units and Efficiency",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+
+# Looking at 30% AMI production and efficiency for HFA Revenue Bonds in particular 
+dc_housing_investment %>% 
+  group_by(investment_address) %>% 
+  filter(incentive_name == "HFA Revenue Bond") %>% 
+  ggplot() +
+  geom_point(
+    mapping = aes(
+    x = ami_30, 
+    y = total_affordable_efficiency
+    )) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "30% AMI units in project",
+    y = "Investment Dollars Per Unit",
+    color = "Incentive Program",
+    title = "Production of 30% AMI Units and Efficiency for HFA Bonds",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+
+# Trying to just look at affordable efficiency for HFA Revenue Bonds in particular 
+dc_housing_investment %>% 
+  group_by(investment_address) %>% 
+  filter(incentive_name == "HFA Revenue Bond") %>% 
+  ggplot() +
+  geom_density(
+    mapping = aes(
+    x = total_affordable_efficiency),
+    binwidth = 100000
+    ) +
+  scale_x_continuous(labels = comma) +
+  labs(
+    x = "Investment Dollars Per Unit",
+    color = "Incentive Program",
+    title = "Efficiency for HFA Bonds",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+
+# trying to look at 30% ami production
+dc_housing_investment %>% 
+  ggplot() +
+  geom_point(
+    mapping = aes(
+    x = ami_30_ratio, 
+    y = incentive_amount,
+    color = incentive_name)) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Number of 30% AMI units covered by investment",
+    y = "Investment amount",
+    color = "Incentive Program",
+    title = "Production of 30% AMI Units",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+
+```
+
+
+
+```{r}
+# Comparing production and efficiency for HFA bond and HPTF
+dc_housing_investment %>% 
+  group_by(investment_address) %>% 
+  filter(incentive_name == "HFA Revenue Bond" | incentive_name == "Housing Production Trust Fund") %>% 
+  ggplot() +
+  geom_point(
+    mapping = aes(
+    x = total_affordable_efficiency, 
+    y = total_affordable,
+    color = incentive_name)) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Investment Dollars Spent Per Unit Produced or Preserved",
+    y = "Total Affordable Units",
+    color = "Incentive Program",
+    title = "Investment Dollars Per Unit by Program",
+    subtitle = "Efficiency of affordable housing program for FY15-19",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  )
+
+
 # Trying this out as scatter plot
 dc_housing_investment %>% 
   group_by(incentive_name, year) %>% 
@@ -172,6 +373,33 @@ dc_housing_investment %>%
     caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
   )
 
+# Trying this out as scatter plot
+dc_housing_investment %>% 
+  group_by(incentive_name, year) %>% 
+  summarize(incentive_total_affordable = sum(total_affordable_ratio, na.rm = TRUE),
+            incentive_avg_efficiency = mean(total_affordable_efficiency, na.rm = TRUE)
+            ) %>%
+  ggplot() +
+  geom_point(
+    mapping = aes(
+    x = incentive_avg_efficiency, 
+    y = incentive_total_affordable,
+  #  color = incentive_name,
+    color = year)) +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    x = "Investment Dollars Spent Per Unit Produced or Preserved",
+    y = "Total Affordable Units",
+    color = "Incentive Program",
+    title = "Investment Dollars Per Unit by Program",
+    subtitle = "Efficiency of affordable housing program for FY15-19",
+    caption = "Source: Author's calculations based on DMPED FY19 Economic Development Return on Investment Data"
+  ) + 
+  facet_wrap(~ incentive_name) + 
+  theme(
+    strip.text.x = element_text(size = 5.5),
+    axis.text=element_text(size = 6))
 
 ```
 
