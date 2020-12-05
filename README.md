@@ -1,4 +1,4 @@
-# DataViz | Assignment04
+# DataViz | Assignment04 | Data Science for Public Policy
 
 This analysis uses `ggplot2` and other `tidyverse` packages to visualize affordable housing investment in DC from FY15-19 and build on work from the DC Office of the Deputy Mayor for Planning and Economic Development (DMPED). For example, the below figure shows the affordable units produced by particular investment programs. 
 
